@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client</title>
+    <script src="./js/socket.io-1.2.0.js"></script>
+    <script src="./js/jquery-3.7.0.js"></script>
+    <script src="./js/main.js"></script>
+    <link href="./css/main_style.css" rel="stylesheet">
+    <link href="./css/app_style.css" rel="stylesheet"/>
+    <link href="./css/jquery.toast.css" rel="stylesheet"/>
+    <link rel="stylesheet" type="text/css" href="./fontawesome-free/css/fontawesome.css">
+    <link rel="stylesheet" type="text/css" href="./fontawesome-free/css/brands.css">
+    <link rel="stylesheet" type="text/css" href="./fontawesome-free/css/solid.css">
+    <script type="text/javascript">
+        var socket = io.connect('http://10.97.13.160:3003');
+        const date = new Date();
+        let currentDay= String(date.getDate()).padStart(2, '0');
+        let currentMonth = String(date.getMonth()+1).padStart(2,"0");
+        let currentYear = date.getFullYear();
+        let ngay = currentYear + "-" + currentMonth + "-" + currentDay; 
+        $(document).ready(function(){
+            before_close_open(1);
+            $(window).bind("beforeunload", function() { 
+                before_close_open(0);
+            });
+
+            var socket = io.connect('http://10.97.13.160:3003');
+            socket.on('get-content', function(data){
+                $("#q-content").val(data);
+            });
+
+            socket.on('get-answer', function(data){
+                var danhsachcautraloi = $("#q-content-question");
+                for(i = 0; i < data.length; i++) {
+                    danhsachcautraloi.append($('<input class = "textcautraloi" type="button" id = "' + data[i].dapandung + '"/>').val(data[i].cautraloi) )
+                }
+            });
+/*
+            socket.on('get-answer2', function(data){
+                $("#q-answer2").val(data);
+            });
+
+            socket.on('get-answer3', function(data){
+                $("#q-answer3").val(data);
+            });
+
+            socket.on('get-answer4', function(data){
+                $("#q-answer4").val(data);
+            });
+*/
+            $('form').submit(function(){
+                socket.emit('chat message', $('#mess').val());
+                $('#mess').val('');
+                return false;
+            });
+                
+            socket.on('chat message', function(msg){
+                $('#messages').append($('<li>').text(msg));
+            });
+                
+        });
+
+        function before_close_open(value){
+            $.ajax({
+                type: 'POST',
+                url: './close-current-page',
+                data: {
+                    idonvi: $("#madonvi").val(),
+                    iduser: $("#iduser").val(),
+                    nameuser: $("#username").val(),
+                    status: value,
+                    ngay: ngay
+                }
+            }).done(function(jsondata){
+                var result = JSON.parse(JSON.stringify(jsondata)).data[0];
+                if(result) {
+                    socket.emit('send-from-client-status-user',result);
+                    console.log("Success!");
+                } else {
+                    console.log("Fail!");
+                }
+            });
+        }
+    </script>
+    <style>
+        .text-input{
+            width: 100%;
+            height: 100%;
+        }
+        .q-question{
+            background: wheat;
+        }
+        .textcautraloi{
+	    	width: 23%;
+			height: 13%;
+			padding: 8px 8px 8px 8px;
+        	margin: 5px 5px 5px 5px;
+			text-align: center;
+			background-color: #6E6E6E;
+         	color:#fff;
+         	border:none;
+         	font-size:15px;
+         	font-weight: bold;
+         	cursor:pointer;
+         	transition:800ms ease all;
+         	outline:none;
+         	position: relative;
+         	float: left;
+    	}
+        .textcautraloi:hover{
+	     	background:#1C1C1C;
+	     	color:#fff;
+	     	font-weight: bold;
+     	}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">MC</div>
+        <ul class="nav-links">
+            <input type="checkbox" id="checkbox_toggle" />
+            <label for="checkbox_toggle" class="hamburger">&#9776;</label>
+            <div class="menu">
+                <li>
+                    <a href="#"><%- info_obj.hoten %></a>
+                </li>
+                <input id="madonvi" type="text" value="<%- info_obj.madonvi %>" hidden="true" />
+                <input id="avatar" type="text" value="<%- info_obj.avatar %>" hidden="true" />
+                <input id="macty" type="text" value="<%- info_obj.macty %>" hidden="true" />
+                <input id="username" type="text" value="<%- info_obj.username %>" hidden="true" />
+                <input id="iduser" type="text" value="<%- info_obj.iduser %>" hidden="true" />
+            </div>
+        </ul>
+    </nav>
+    <table width="100%">
+        <tr align="center">
+            <td>
+                <input type="text" id="q-content" class="text-input" />
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="q-question" id="q-content-question">
+
+                </div>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

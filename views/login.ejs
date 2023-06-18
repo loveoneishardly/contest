@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="./js/jquery-3.7.0.js"></script>
+    <script src="./js/jquery.toast.js"></script>
+    <script src="./js/toastr.js"></script>
+    <link href="./css/main_style.css" rel="stylesheet">
+    <link href="./css/app_style.css" rel="stylesheet"/>
+    <link href="./css/jquery.toast.css" rel="stylesheet"/>
+    <script src="./js/socket.io-1.2.0.js"></script>
+    <title>Đăng nhập</title>
+    <script>
+        const date = new Date();
+        let currentDay= String(date.getDate()).padStart(2, '0');
+        let currentMonth = String(date.getMonth()+1).padStart(2,"0");
+        let currentYear = date.getFullYear();
+        let ngay = currentYear + "-" + currentMonth + "-" + currentDay; 
+        $(document).ready(function(){
+            var socket = io.connect('http://10.97.13.160:3003');
+
+            $("#login-button").click(function(event){
+                event.preventDefault();
+                const username = $("#username").val();
+                const password = $("#password").val();
+                if (username == '' && password == '') {
+                    nofication_f(3000,'Tài khoản & Mật khẩu đang trống!','error');
+                } else if (username == '') {
+                    nofication_f(3000,'Tài khoản đang trống!','error');
+                } else if (password == '') {
+                    nofication_f(3000,'Mật khẩu đang trống!','error');
+                } else {
+                    $.ajax({
+                        type: 'POST',
+                        url: './xulydangnhap',
+                        data: {
+                            username: username,
+                            password:password
+                        }
+                    }).done(function(jsondata){
+                        var value = JSON.parse(JSON.stringify(jsondata)).data[0];
+                        if (value.status >= 1){
+                            $('form').fadeOut(500);
+                            $('.wrapper').addClass('form-success');
+                            if (value.admin == 1) {
+                                window.location.href = "/server";
+                            } else if (value.admin == 2){
+                                socket.emit('send-from-client-infouser',value);
+                                save_info_users(value.com_id, value.id, value.username, value.name, 0, 0);
+                                window.location.href = "/client";
+                            }
+                        } else {
+                            nofication_f(3000,'Đăng nhập thất bại!','error');
+                            getCaptcha();
+                        }
+                    });
+                }
+            });
+        });
+
+        function nofication_f(time, text, icon) {
+            $.toast({
+                text: text,
+                position: 'bottom-right',
+                loaderBg:'#fff',
+                icon: icon,
+                hideAfter: time, 
+                stack: 6
+            });
+        }
+
+        function save_info_users(idonvi, iduser, nameuser, hoten, idcontest, idnhom){
+            $.ajax({
+                type: 'POST',
+                url: './save-user',
+                data: {
+                    idonvi: idonvi,
+                    iduser: iduser,
+                    nameuser:nameuser,
+                    ngay: ngay,
+                    hoten: hoten,
+                    idcontest: idcontest,
+                    idnhom: idnhom
+                }
+            }).done(function(jsondata){
+                var value = JSON.parse(JSON.stringify(jsondata)).data[0];
+                if(value) {
+                    console.log("Lưu user thành công!");
+                } else {
+                    console.log("Lưu user thất bại!");
+                }
+            });
+        }
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">MC</div>
+        <ul class="nav-links">
+            <input type="checkbox" id="checkbox_toggle" />
+            <label for="checkbox_toggle" class="hamburger">&#9776;</label>
+            <div class="menu">
+                <li><a href="#">Đăng nhập</a></li>
+            </div>
+        </ul>
+    </nav>
+    <div class="w3-row-padding">
+        <div class="w3-col">
+            <div class="wrapper">
+                <div class="container">
+                    <h1>XIN CHÀO</h1>
+                    <form class="form">
+                        <input type="text" placeholder="Username" id="username">
+                        <input type="password" placeholder="Password" id="password">
+                        <button type="submit" id="login-button">Login</button>
+                    </form>
+                </div>
+                <ul class="bg-bubbles">
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                    <li></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

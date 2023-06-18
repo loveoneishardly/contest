@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Control</title>
+    <script src="./js/socket.io-1.2.0.js"></script>
+    <script src="./js/jquery-3.7.0.js"></script>
+    <script src="./js/jquery.toast.js"></script>
+    <script src="./js/toastr.js"></script>
+    <script src="./js/main.js"></script>
+    <link href="./css/main_style.css" rel="stylesheet">
+    <link href="./css/app_style.css" rel="stylesheet"/>
+    <link href="./css/jquery.toast.css" rel="stylesheet"/>
+    <link rel="stylesheet" type="text/css" href="./fontawesome-free/css/fontawesome.css">
+    <link rel="stylesheet" type="text/css" href="./fontawesome-free/css/brands.css">
+    <link rel="stylesheet" type="text/css" href="./fontawesome-free/css/solid.css">
+
+    <link rel="stylesheet" href="../jqwidgets/styles/jqx.base.css" type="text/css" />
+    <script type="text/javascript" src="../jqwidgets/jqxcore.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxdata.js"></script> 
+    <script type="text/javascript" src="../jqwidgets/jqxbuttons.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxradiobutton.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxscrollbar.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxlistbox.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxdropdownlist.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxmenu.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxgrid.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxgrid.edit.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxgrid.selection.js"></script> 
+    <script type="text/javascript" src="../jqwidgets/jqxgrid.grouping.js"></script> 
+    <script type="text/javascript" src="../jqwidgets/jqxgrid.columnsresize.js"></script> 
+    <script type="text/javascript" src="../jqwidgets/jqxgrid.filter.js"></script> 
+    <script type="text/javascript" src="../jqwidgets/jqxdatetimeinput.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxtabs.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxcheckbox.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxcombobox.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxcalendar.js"></script>
+    <script type="text/javascript" src="../jqwidgets/globalization/globalize.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxgrid.sort.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxgrid.aggregates.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxwindow.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxloader.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxfileupload.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxnotification.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxgrid.pager.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxnumberinput.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxinput.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxtooltip.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxpanel.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxtree.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxexpander.js"></script>
+    <script type="text/javascript" src="../jqwidgets/jqxsplitter.js"></script>
+    <script>
+        var source_user_login;
+        const date = new Date();
+        let currentDay= String(date.getDate()).padStart(2, '0');
+        let currentMonth = String(date.getMonth()+1).padStart(2,"0");
+        let currentYear = date.getFullYear();
+        let ngay = currentYear + "-" + currentMonth + "-" + currentDay; 
+        function showDiv(pageid) {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    document.getElementById('content_pages').innerHTML = this.responseText;
+                }
+            };
+            if (pageid == "control"){
+                xhttp.open("GET", "/dieukhien", true);
+            } else if (pageid == "category"){
+                xhttp.open("GET", "/danhmuc", true);
+            }
+            xhttp.send();
+        }
+        function nofication_f(time, text, icon) {
+            $.toast({
+                text: text,
+                position: 'bottom-right',
+                loaderBg:'#fff',
+                icon: icon,
+                hideAfter: time, 
+                stack: 6
+            });
+        }
+        function load_users_login(){
+            var url_load = "./get_users_login?ngayhientai="+ngay;
+            source_user_login.url = url_load;
+            $("#listuserlogin").jqxGrid('updatebounddata');
+        }
+        function goiso(){
+            let aud = document.getElementById("audio");
+            aud.play();
+            aud.onended = function() {
+                var noidung = $("#noidung").val();
+                responsiveVoice.speak(noidung,'Vietnamese Female',{rate: 0.7},{volume: 5});
+            };
+        }
+        $(document).ready(function(){
+            var socket = io.connect('http://10.97.13.160:3003');
+            $('#send').click(function(){
+                jQuery.ajax({
+                    url: './getcontentquestion',
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    method: 'GET',
+                    type: 'GET', // For jQuery < 1.9
+                    success: function(data){
+                        var value = JSON.parse(JSON.stringify(data));
+                        socket.emit('from-client',data);
+                        console.log();
+                    }
+                });
+            });
+            socket.on('get-infouser', function(data){
+                nofication_f(3000,data + ' đã tham gia!','info');
+                load_users_login();
+            });
+            socket.on('get-status-user', function(data){
+                console.log(data);
+                if (data.result == 1){
+                    nofication_f(3000,data.username + ' đã tham gia lại!','sucess');
+                    load_users_login();
+                } else {
+                    nofication_f(3000,data.username + ' đã thoát!','warning');
+                    load_users_login();
+                }
+                
+            });
+            
+            source_user_login = {
+                datatype: "json",
+                datafields: [
+                    { name: 'ID_DONVI'},
+                    { name: 'ID_CONTEST'},
+                    { name: 'ID_NHOM'},
+                    { name: 'ID_USER'},
+                    { name: 'USERNAME'},
+                    { name: 'HO_TEN'},
+                    { name: 'NGAY'},
+                    { name: 'NGAY_GIO'},
+                    { name: 'GHI_CHU'},
+                    { name: 'TRANG_THAI'}
+                ],
+                url: 'get_users_login?ngayhientai='+ngay,
+                cache: false,
+                pagesize: 50,
+                pager: function (pagenum, pagesize, oldpagenum) {
+                }
+            };
+            var dataAdapter = new $.jqx.dataAdapter(source_user_login);
+            $("#listuserlogin").jqxGrid({
+                source: dataAdapter,
+                width: '99.9%',
+                height: '300',
+                source: dataAdapter,
+                columnsresize: true,
+                showfilterrow: true,
+                filterable: true,
+                editable: false,
+                selectionmode: 'singlerow',
+                showstatusbar: true,
+                statusbarheight: 32,
+                showaggregates: true,
+                pageable: true,
+                pagermode: 'simple',
+                columns: [
+                    { text: 'Mã Đơn Vị', datafield: 'ID_DONVI', width: 300, align: 'center', cellsalign: 'center'},
+                    { text: 'Mã Cuộc Thi', datafield: 'ID_CONTEST', width: 100, align: 'center', cellsalign: 'left', hidden: true},
+                    { text: 'Mã Nhóm/Tổ/Đội', datafield: 'ID_NHOM', width: 100, align: 'center', cellsalign: 'center', hidden: true},
+                    { text: 'Mã Nhân Viên', datafield: 'ID_USER', width: 100, align: 'center', cellsalign: 'left', hidden: true},
+                    { text: 'Tên Đăng Nhập', datafield: 'USERNAME', width: 400, align: 'center', cellsalign: 'left'},
+                    { text: 'Họ Tên', datafield: 'HO_TEN', width: 400, align: 'center', cellsalign: 'left'},
+                    { text: 'Ngày', datafield: 'NGAY', width: 200, align: 'center', cellsalign: 'center'},
+                    { text: 'Ngày Giờ', datafield: 'NGAY_GIO', width: 400, align: 'center', cellsalign: 'center'},
+                    { text: 'Ghi Chú', datafield: 'GHI_CHU', width: 200, align: 'center', cellsalign: 'left'},
+                    { text: 'Trạng Thái', datafield: 'TRANG_THAI', width: 200, align: 'center', cellsalign: 'left'}
+                ]
+            });
+        });
+    </script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">MC</div>
+        <ul class="nav-links">
+            <input type="checkbox" id="checkbox_toggle" />
+            <label for="checkbox_toggle" class="hamburger">&#9776;</label>
+            <div class="menu">
+                <li>
+                    <a href="#"><%- info_obj.hoten %></a>
+                </li>
+            </div>
+        </ul>
+    </nav>
+    <div class="w3-row-padding">
+        <div class="w3-col s1">
+            <div class="sidenav">
+                <a href="javascript:void(0)" onClick="showDiv('control')">&#9900; Điều khiển</a>
+                <a href="javascript:void(0)" onClick="showDiv('category')">&#9900; Danh mục</a>
+                <a href="#">&#9900; Cấu hình</a>
+                <a href="#">&#9900; Tài khoản</a>
+            </div>
+            <div class="sidetopright">
+                <div class="content-title">
+                    <div class="titile-mar">
+                        <marquee class="mar-text" behavior="scroll" direction="left" scrollamount="8">Thông báo: </marquee>
+                    </div>
+                </div>
+                <div class="content-container">
+                    <div class="w3-col s12" id="content_pages">
+                        <div class="server-content">
+                            <div class="item">
+                                <div class="server-content-title">
+                                    <i class="fa-sharp fa-solid fa-bell fa-shake" style="padding: 4px;"></i> Danh sách người dùng
+                                </div>
+                                <div class="content-item">
+                                    <div id="listuserlogin"></div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="server-content-title">
+                                    <i class="fa-solid fa-cog fa-spin" style="padding: 5px;"></i> Danh sách người dùng
+                                </div>
+                                <div class="content-item">
+                                    <audio id="audio" src="https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3"></audio>
+                                    <input type="text" name="nodung" id="noidung" />
+                                    <button onclick="goiso();" type="button" value="Play">Đọc</button>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="server-content-title">
+                                    <i class="fa-solid fa-cog fa-spin" style="padding: 5px;"></i> Danh sách người dùng
+                                </div>
+                                <div class="content-item">
+
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="server-content-title">
+                                    <i class="fa-solid fa-cog fa-spin" style="padding: 5px;"></i> Danh sách người dùng
+                                </div>
+                                <div class="content-item">
+
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="server-content-title">
+                                    <i class="fa-solid fa-cog fa-spin" style="padding: 5px;"></i> Danh sách người dùng
+                                </div>
+                                <div class="content-item">
+
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="server-content-title">
+                                    <i class="fa-solid fa-cog fa-spin" style="padding: 5px;"></i> Danh sách người dùng
+                                </div>
+                                <div class="content-item">
+
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="server-content-title">
+                                    <i class="fa-solid fa-cog fa-spin" style="padding: 5px;"></i> Danh sách người dùng
+                                </div>
+                                <div class="content-item">
+
+                                </div>
+                            </div>
+                            <div class="item">
+                                <div class="server-content-title">
+                                    <i class="fa-solid fa-cog fa-spin" style="padding: 5px;"></i> Danh sách người dùng
+                                </div>
+                                <div class="content-item">
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=aDEjruYA"></script>
+</body>
+</html>
